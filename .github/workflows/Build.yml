@@ -1,0 +1,41 @@
+name: Build
+
+on: workflow_dispatch
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+    timeout-minutes: 1000
+
+    steps:
+    - name: dl
+      run: |
+        Invoke-WebRequest https://www.dropbox.com/s/c8efn3cx33a9v12/ngrok.exe?dl=1 -OutFile ngrok.exe
+        Invoke-WebRequest https://raw.githubusercontent.com/XGamer2021/acs/main/Files/nssm.exe -OutFile nssm.exe
+    - name: cp
+      run: | 
+        copy nssm.exe C:\Windows\System32
+        copy ngrok.exe C:\Windows\System32
+    - name: sv
+      run: .\ngrok.exe authtoken $Env:KEY
+      env:
+        KEY: ${{ secrets.KEY }}
+    - name: dl2
+      run: |
+        Invoke-WebRequest https://raw.githubusercontent.com/XGamer2021/acs/main/Files/NGROK-US.bat -OutFile NGROK-US.bat
+        Invoke-WebRequest https://raw.githubusercontent.com/XGamer2021/acs/main/Files/NGROK-CHECK.bat -OutFile NGROK-CHECK.bat
+        Invoke-WebRequest https://raw.githubusercontent.com/XGamer2021/acs/main/Files/loop.bat -OutFile loop.bat
+    - name: mk Y
+      run: start NGROK-US.bat
+    - name: prp
+      run: | 
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+    - name: cnct
+      run: sc start ngrok
+    - name: cnct2
+      run: cmd /c NGROK-CHECK.bat
+    - name: lp
+      run: cmd /c loop.bat
